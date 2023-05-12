@@ -117,17 +117,18 @@ def start_reservation_process(request):
     )
     reservation.save()
 
-    response = {'bookingID': reservation.pk}
-    return JsonResponse(response)
+    bookingID = "01" + str(reservation.pk)
+    return JsonResponse({'bookingID': bookingID})
 
-# {"ReservationID" : 15}
+# {"bookingID" : "0115"}
 
 def cancel_reservation(request): 
 
     try:
         data = json.loads(request.body)  #  {'bookingID'}
-        reservationID = data[list(data.keys())[0]] # Int
-        reservation = Reservation.objects.get(pk = reservationID)
+        reservationID = data[list(data.keys())[0]] # String
+        bookingID = reservationID[2:]
+        reservation = Reservation.objects.get(pk = bookingID)
 
         if(reservation):
             # Add number of seats back to flight
@@ -150,10 +151,11 @@ def cancel_reservation(request):
 def confirm_booking(request):
     try:
         data = json.loads(request.body)  #  {'bookingID', 'amount'}
-        reservationID = data[list(data.keys())[0]] # Int
+        reservationID = data[list(data.keys())[0]] # String
+        bookingID = reservationID[2:]
         amount = data[list(data.keys())[1]] # amount
 
-        reservation = Reservation.objects.get(pk = reservationID)
+        reservation = Reservation.objects.get(pk = bookingID)
         flight = reservation.flightID
 
         economyPrice = (flight.priceID.priceOfEconomy * reservation.noOfEconomy) 
@@ -180,8 +182,8 @@ def cancel_booking(request):
     try:
         data = json.loads(request.body)  #  {'bookingID'}
         reservationID = data[list(data.keys())[0]] # Int
-        # reservation = get_object_or_404(Reservation, pk = reservationID)
-        reservation = Reservation.objects.get(pk = reservationID)
+        bookingID = reservationID[2:]
+        reservation = Reservation.objects.get(pk = bookingID)
 
         if(reservation):
             # Add number of seats back to flight
