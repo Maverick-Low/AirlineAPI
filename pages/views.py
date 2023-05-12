@@ -153,7 +153,7 @@ def confirm_booking(request):
         amount = data[list(data.keys())[1]] # amount
 
         reservation = Reservation.objects.get(pk = reservationID)
-        flight = Flight.objects.get(pk = reservation)
+        flight = reservation.flightID
 
         totalPrice = (flight.priceID.priceOfEconomy * reservation.noOfEconomy) 
         + (flight.priceID.priceOfBusiness * reservation.noOfEconomy)
