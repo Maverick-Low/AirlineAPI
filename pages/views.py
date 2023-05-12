@@ -155,9 +155,10 @@ def confirm_booking(request):
         reservation = Reservation.objects.get(pk = reservationID)
         flight = reservation.flightID
 
-        totalPrice = (flight.priceID.priceOfEconomy * reservation.noOfEconomy) 
-        + (flight.priceID.priceOfBusiness * reservation.noOfEconomy)
-        + (flight.priceID.priceOfFirstClass * reservation.noOfFirstClass)
+        economyPrice = (flight.priceID.priceOfEconomy * reservation.noOfEconomy) 
+        businessPrice = (flight.priceID.priceOfBusiness * reservation.noOfEconomy)
+        firstClassPrice = (flight.priceID.priceOfFirstClass * reservation.noOfFirstClass)
+        totalPrice =  economyPrice + businessPrice + firstClassPrice
         
         if(amount == totalPrice):
             reservation.confirmedStatus = True
