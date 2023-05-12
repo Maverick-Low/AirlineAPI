@@ -148,12 +148,24 @@ def cancel_reservation(request):
 
 def confirm_booking(request):
     try:
-        data = json.loads(request.body)  #  {'bookingID'}
+        data = json.loads(request.body)  #  {'bookingID', 'amount'}
         reservationID = data[list(data.keys())[0]] # Int
+        amount = data[list(data.keys())[1]] # amount
+
         reservation = Reservation.objects.get(pk = reservationID)
-        reservation.confirmedStatus = True
-        reservation.save()
-        return JsonResponse({'status': "success"})
+        flight = Flight.objects.get(pk = reservation)
+
+        totalPrice = (flight.priceID.priceOfEconomy * reservation.noOfEconomy) 
+        + (flight.priceID.priceOfBusiness * reservation.noOfEconomy)
+        + (flight.priceID.priceOfFirstClass * reservation.noOfFirstClass)
+        
+        if(amount == totalPrice):
+            reservation.confirmedStatus = True
+            reservation.save()
+            return JsonResponse({'status': "success"})
+        
+        else:
+            return JsonResponse({'status': "failed", "priceExpected": totalPrice, "priceReceived": amount})
     
     except ObjectDoesNotExist:
         return JsonResponse({'status': "failed"})
