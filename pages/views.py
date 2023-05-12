@@ -69,11 +69,11 @@ def list_flights(request):
         return JsonResponse({"message" : "error"})
 
 # {
-#     "flightID": "1",
+#     "flightID": "011",
 #     "Seats": {
-#         "noOfEconomy": 5,
-#         "noOfBusiness": 10,
-#         "noOfFirstClass": 15
+#         "noOfEconomy": 3,
+#         "noOfBusiness": 2,
+#         "noOfFirstClass": 1
 #     },
 #     "email" : "maverick@gmail.com"
 # }
@@ -84,11 +84,12 @@ def start_reservation_process(request):
     noOfSeats = data[list(data.keys())[1]] # Int
     email = data[list(data.keys())[2]] # String
 
+    parsedFlightID = int(flightID[2:])
     economySeats = noOfSeats[list(noOfSeats.keys())[0]] # Int
     businessSeats = noOfSeats[list(noOfSeats.keys())[1]]# Int
     firstClassSeats = noOfSeats[list(noOfSeats.keys())[2]] # Int
 
-    flight = Flight.objects.get(pk = flightID)
+    flight = Flight.objects.get(pk = parsedFlightID)
 
     # Reduce available seats from the flight
     totalSeats = economySeats + businessSeats + firstClassSeats
