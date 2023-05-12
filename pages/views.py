@@ -159,8 +159,9 @@ def confirm_booking(request):
         businessPrice = (flight.priceID.priceOfBusiness * reservation.noOfEconomy)
         firstClassPrice = (flight.priceID.priceOfFirstClass * reservation.noOfFirstClass)
         totalPrice =  economyPrice + businessPrice + firstClassPrice
+        totalPrice2DP = "{:.2f}".format(totalPrice)
         
-        if(amount == totalPrice):
+        if(amount == totalPrice2DP):
             reservation.confirmedStatus = True
             reservation.save()
             return JsonResponse({'status': "success"})
