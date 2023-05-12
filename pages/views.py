@@ -46,9 +46,11 @@ def list_flights(request):
 
         listOfFlights = {}
         for flight in flights:
+            startLocation = flight.startLocation.city
+            destination = flight.destination.city
             flightDict = {  
-                            "cityOfDeparture" : flight.startLocation,
-                            "cityOfArrival" : flight.destination,
+                            "cityOfDeparture" : startLocation,
+                            "cityOfArrival" : destination,
                             "dateOfDeparture" : flight.departureDate,
                             "timeOfDeparture" : flight.departureTime,
                             "timeOfArrival" : flight.arrivalTime,
