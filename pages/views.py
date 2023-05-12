@@ -42,7 +42,7 @@ def list_flights(request):
         if totalTickets:
             flights = flights.filter(totalAvailableSeats__gte=totalTickets)
         if departureDate:
-            flights = flights.filter(departureDate__gte=departureDate)
+            flights = flights.filter(departureDate=departureDate)
 
         listOfFlights = {}
         for flight in flights:
