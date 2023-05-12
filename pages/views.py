@@ -10,7 +10,7 @@ import json
 
 # Create your views here.
 def index(request):
-    return HttpResponse("<h1> Homepage </h1>")
+    return HttpResponse("<h1> Homepage </h1>") 
 
 # {
 #     "dateOfDeparture": "",
@@ -70,7 +70,7 @@ def list_flights(request):
 
 # {
 #     "flightID": "1",
-#     "noOfSeats": {
+#     "Seats": {
 #         "noOfEconomy": 5,
 #         "noOfBusiness": 10,
 #         "noOfFirstClass": 15
@@ -79,7 +79,7 @@ def list_flights(request):
 # }
   
 def start_reservation_process(request):
-    data = json.loads(request.body) #  {‘Flight ID’, 'noOfSeats : {noOfEconomy, noOfBusiness, noOfFirstClass}, 'email'}
+    data = json.loads(request.body) #  {‘Flight ID’, 'Seats : {noOfEconomy, noOfBusiness, noOfFirstClass}, 'email'}
     flightID = data[list(data.keys())[0]] # Int
     noOfSeats = data[list(data.keys())[1]] # Int
     email = data[list(data.keys())[2]] # String
@@ -116,7 +116,7 @@ def start_reservation_process(request):
     )
     reservation.save()
 
-    response = {'reservationID': reservation.pk}
+    response = {'bookingID': reservation.pk}
     return JsonResponse(response)
 
 # {"ReservationID" : 15}
@@ -124,9 +124,8 @@ def start_reservation_process(request):
 def cancel_reservation(request): 
 
     try:
-        data = json.loads(request.body)  #  {'ReservationID'}
+        data = json.loads(request.body)  #  {'bookingID'}
         reservationID = data[list(data.keys())[0]] # Int
-        # reservation = get_object_or_404(Reservation, pk = reservationID)
         reservation = Reservation.objects.get(pk = reservationID)
 
         if(reservation):
@@ -141,28 +140,28 @@ def cancel_reservation(request):
 
         # Delete reservation
         reservation.delete()
-        return JsonResponse({'status': True})
+        return JsonResponse({'status': "success"})
 
     except ObjectDoesNotExist:
-        return JsonResponse({'status': False})
+        return JsonResponse({'status': "failed"})
 
 
 def confirm_booking(request):
     try:
-        data = json.loads(request.body)  #  {'ReservationID'}
+        data = json.loads(request.body)  #  {'bookingID'}
         reservationID = data[list(data.keys())[0]] # Int
         reservation = Reservation.objects.get(pk = reservationID)
         reservation.confirmedStatus = True
         reservation.save()
-        return JsonResponse({'status': "CONFIRMED"})
+        return JsonResponse({'status': "success"})
     
     except ObjectDoesNotExist:
-        return JsonResponse({'status': False})
+        return JsonResponse({'status': "failed"})
     
 
 def cancel_booking(request):
     try:
-        data = json.loads(request.body)  #  {'ReservationID'}
+        data = json.loads(request.body)  #  {'bookingID'}
         reservationID = data[list(data.keys())[0]] # Int
         # reservation = get_object_or_404(Reservation, pk = reservationID)
         reservation = Reservation.objects.get(pk = reservationID)
@@ -179,8 +178,8 @@ def cancel_booking(request):
 
         # Delete reservation
         reservation.delete()
-        return JsonResponse({'status': True})
+        return JsonResponse({'status': 'success'})
 
     except ObjectDoesNotExist:
-        return JsonResponse({'status': False})
+        return JsonResponse({'status': 'failed'})
 
