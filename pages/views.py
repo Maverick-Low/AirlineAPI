@@ -150,13 +150,15 @@ def cancel_reservation(request):
             flight.availableSeatsBusiness += reservation.noOfBusiness
             flight.availableSeatsFirstClass += reservation.noOfFirstClass
             flight.save()
-
-        # Delete reservation
-        reservation.delete()
+            # Delete reservation
+            reservation.delete()
+        
         return JsonResponse({"status": "success"})
 
     except ObjectDoesNotExist:
         return JsonResponse({"status": "failed"})
+
+# {"bookingID" : "0159", "amount" : 17300}
 
 @csrf_exempt
 def confirm_booking(request):
@@ -171,7 +173,7 @@ def confirm_booking(request):
         flight = reservation.flightID
 
         economyPrice = (flight.priceID.priceOfEconomy * reservation.noOfEconomy) 
-        businessPrice = (flight.priceID.priceOfBusiness * reservation.noOfEconomy)
+        businessPrice = (flight.priceID.priceOfBusiness * reservation.noOfBusiness)
         firstClassPrice = (flight.priceID.priceOfFirstClass * reservation.noOfFirstClass)
         totalPrice =  economyPrice + businessPrice + firstClassPrice
         
@@ -184,7 +186,7 @@ def confirm_booking(request):
             return JsonResponse({"status": "success"})
         
         else:
-            return JsonResponse({"status": "failed"})
+            return JsonResponse({"status": "failed", "totalPrice" : totalPrice, "expected" : amount})
     
     except ObjectDoesNotExist:
         return JsonResponse({"status": "failed"})
