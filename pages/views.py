@@ -1,11 +1,11 @@
-from django.shortcuts import render
 from django.http import HttpResponse
 from django.http import JsonResponse
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from datetime import datetime, timedelta
 from .models import Flight, Reservation, Location, Passenger
+from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.csrf import csrf_exempt
 import json
 
 # Create your views here.
@@ -19,15 +19,16 @@ def index(request):
 #     "tickets": 51
 # }
 
+@require_GET
 def list_flights(request):
     
     try: 
         cancel_old_reservations()
         data = json.loads(request.body) # {dateOfDeparture, "cityOfDeparture", cityOfArrival, ‘tickets" }
-        departureDateString = data[list(data.keys())[0]] # String
-        departureCity = data[list(data.keys())[1]] # String
-        arrivalCity = data[list(data.keys())[2]] # String
-        totalTickets = data[list(data.keys())[3]] # Int
+        departureDateString = data.get('dateOfDeparture') # String
+        departureCity = data.get('cityOfDeparture')  # String
+        arrivalCity = data.get('cityOfArrival') # String
+        totalTickets = data.get('‘tickets')# Int
 
         departureDate = datetime.strptime(departureDateString, "%Y-%m-%d") if departureDateString else None
         departureCityID = Location.objects.get(city__iexact = departureCity) if departureCity else None
@@ -71,27 +72,28 @@ def list_flights(request):
 
 # {
 #     "flightID": "011",
-#     "Seats": {
+#     "seats": {
 #         "noOfEconomy": 3,
 #         "noOfBusiness": 2,
 #         "noOfFirstClass": 1
 #     },
 #     "email" : "maverick@gmail.com"
 # }
-  
+
+@csrf_exempt
 def start_reservation_process(request):
 
     try:
         cancel_old_reservations()
-        data = json.loads(request.body) #  {‘Flight ID’, "Seats : {noOfEconomy, noOfBusiness, noOfFirstClass}, "email"}
-        flightID = data[list(data.keys())[0]] # Int
-        noOfSeats = data[list(data.keys())[1]] # Int
-        email = data[list(data.keys())[2]] # String
+        data = json.loads(request.body) #  {flightID’, "seats : {noOfEconomy, noOfBusiness, noOfFirstClass}, "email"}
+        flightID = data.get('flightID') # Int
+        noOfSeats = data.get('seats', 0)# Int
+        email = data.get('email') # String
 
         parsedFlightID = int(flightID[2:])
-        economySeats = noOfSeats[list(noOfSeats.keys())[0]] # Int
-        businessSeats = noOfSeats[list(noOfSeats.keys())[1]]# Int
-        firstClassSeats = noOfSeats[list(noOfSeats.keys())[2]] # Int
+        economySeats = noOfSeats.get('noOfEconomy', 0) # Int
+        businessSeats = noOfSeats.get('noOfBusiness', 0) # Int
+        firstClassSeats = noOfSeats.get('noOfFirstClass', 0) # Int
 
         flight = Flight.objects.get(pk = parsedFlightID)
 
@@ -129,12 +131,13 @@ def start_reservation_process(request):
 
 # {"bookingID" : "0115"}
 
+@csrf_exempt
 def cancel_reservation(request): 
     
     try:
         cancel_old_reservations()
         data = json.loads(request.body)  #  {"bookingID"}
-        reservationID = data[list(data.keys())[0]] # String
+        reservationID = data.get('bookingID') # String
         bookingID = reservationID[2:]
         reservation = Reservation.objects.get(pk = bookingID)
 
@@ -155,14 +158,14 @@ def cancel_reservation(request):
     except ObjectDoesNotExist:
         return JsonResponse({"status": "failed"})
 
-
+@csrf_exempt
 def confirm_booking(request):
     try:
         cancel_old_reservations()
         data = json.loads(request.body)  #  {"bookingID", "amount"}
-        reservationID = data[list(data.keys())[0]] # String
+        reservationID = data.get('bookingID') # String
         bookingID = reservationID[2:]
-        amount = data[list(data.keys())[1]] # amount
+        amount = data.get('amount') # amount
 
         reservation = Reservation.objects.get(pk = bookingID)
         flight = reservation.flightID
@@ -186,12 +189,12 @@ def confirm_booking(request):
     except ObjectDoesNotExist:
         return JsonResponse({"status": "failed"})
     
-
+@csrf_exempt    
 def cancel_booking(request):
     try:
         cancel_old_reservations()
         data = json.loads(request.body)  #  {"bookingID"}
-        reservationID = data[list(data.keys())[0]] # Int
+        reservationID = data.get('bookingID') # Int
         bookingID = reservationID[2:]
         reservation = Reservation.objects.get(pk = bookingID)
 
@@ -211,7 +214,6 @@ def cancel_booking(request):
 
     except ObjectDoesNotExist:
         return JsonResponse({"status": "failed"})
-
 
 def cancel_old_reservations():
     currentTime = timezone.now()
