@@ -59,10 +59,10 @@ def list_flights(request):
                                 "noOfBusiness": flight.planeID.noOfBusiness,
                                 "noOfFirstClass": flight.planeID.noOfFirstClass,
                             },
-                                "price" : {
-                                    "priceOfEconomy": flight.priceID.priceOfEconomy,
-                                    "priceOfBusiness": flight.priceID.priceOfBusiness,
-                                    "priceOfFirstClass": flight.priceID.priceOfFirstClass
+                            "price" : {
+                                "priceOfEconomy": flight.priceID.priceOfEconomy,
+                                "priceOfBusiness": flight.priceID.priceOfBusiness,
+                                "priceOfFirstClass": flight.priceID.priceOfFirstClass
                             }
                         }
             
@@ -72,7 +72,7 @@ def list_flights(request):
         return JsonResponse(listOfFlights)
     
     except ObjectDoesNotExist:
-        return JsonResponse({"status" : "failed"})
+        return JsonResponse({})
 
 # {
 #     "flightID": "011",
