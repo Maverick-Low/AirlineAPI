@@ -29,8 +29,8 @@ def list_flights(request):
         totalTickets = data[list(data.keys())[3]] # Int
 
         departureDate = datetime.strptime(departureDateString, '%Y-%m-%d') if departureDateString else None
-        departureCityID = Location.objects.get(city = departureCity) if departureCity else None
-        arrivalCityID = Location.objects.get(city = arrivalCity) if arrivalCity else None
+        departureCityID = Location.objects.get(city__iexact = departureCity) if departureCity else None
+        arrivalCityID = Location.objects.get(city__iexact = arrivalCity) if arrivalCity else None
 
         flights = Flight.objects.all()
         if departureCityID:
@@ -66,7 +66,7 @@ def list_flights(request):
         return JsonResponse(listOfFlights)
     
     except ObjectDoesNotExist:
-        return JsonResponse({"message" : "error"})
+        return JsonResponse({"status" : "failed"})
 
 # {
 #     "flightID": "011",
