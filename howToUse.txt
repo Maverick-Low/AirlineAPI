@@ -1,0 +1,51 @@
+Name of pythonanywhere domain:
+mavericklow.pythonanywhere.com
+
+Admin login for django project:
+User: ammar
+Pass: django
+
+How to use:
+Each function expects a json in a specific format as indexing is used
+to separate this data and query the database. Below are all the endpoints
+and the expected format of the received json request.
+
+/airline/form
+{
+    "dateOfDeparture": "YYYY-MM-DD",
+    "cityOfDeparture": "name of city",
+    "cityOfArrival": "name of city",
+    "tickets": integer
+}
+
+/airline/reserve
+{
+    "flightID": String with "01" before the actual id. E.g. "011",
+    "seats": {
+        "noOfEconomy": int,
+        "noOfBusiness": int,
+        "noOfFirstClass": int
+    },
+    "email" : String with "01" before the actual id. E.g. "011",
+}
+
+/airline/cancel_reservation
+{"bookingID" : String with "01" before the actual id. E.g. "011,}
+
+/airline/confirm_booking
+{
+    "bookingID" : String with "01" before the actual id. E.g. "011",
+    "amount" : float
+}
+
+/airline/cancel_reservation
+{"bookingID" : String with "01" before the actual id. E.g. "011",}
+
+
+Notes:
+The group decided that each airline have a 'distinguishing ID' so that the
+aggregator knows which flight corresponds to each airline. For mine, this is
+the '01' appended. My Flight database stores flightID's as incrementing integers
+whereas, when i receive the flightID information, it is in the form of a string
+which i then parse and turn into an int that is used to find the corresponding
+flight. This is the same for booking ID.

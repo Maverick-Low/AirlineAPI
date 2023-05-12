@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
-from datetime import datetime
+from datetime import datetime, timedelta
 from .models import Flight, Reservation, Location, Passenger
 import json
 
@@ -22,13 +22,14 @@ def index(request):
 def list_flights(request):
     
     try: 
-        data = json.loads(request.body) # {dateOfDeparture, 'cityOfDeparture', cityOfArrival, ‘tickets' }
+        cancel_old_reservations()
+        data = json.loads(request.body) # {dateOfDeparture, "cityOfDeparture", cityOfArrival, ‘tickets" }
         departureDateString = data[list(data.keys())[0]] # String
         departureCity = data[list(data.keys())[1]] # String
         arrivalCity = data[list(data.keys())[2]] # String
         totalTickets = data[list(data.keys())[3]] # Int
 
-        departureDate = datetime.strptime(departureDateString, '%Y-%m-%d') if departureDateString else None
+        departureDate = datetime.strptime(departureDateString, "%Y-%m-%d") if departureDateString else None
         departureCityID = Location.objects.get(city__iexact = departureCity) if departureCity else None
         arrivalCityID = Location.objects.get(city__iexact = arrivalCity) if arrivalCity else None
 
@@ -45,22 +46,22 @@ def list_flights(request):
         listOfFlights = {}
         for flight in flights:
             flightDict = {  
-                            'dateOfDeparture' : flight.departureDate,
-                            'timeOfDeparture' : flight.departureTime,
-                            'timeOfArrival' : flight.arrivalTime,
-                            'seats': {
-                                'noOfEconomy': flight.planeID.noOfEconomy,
-                                'noOfBusiness': flight.planeID.noOfBusiness,
-                                'noOfFirstClass': flight.planeID.noOfFirstClass,
+                            "dateOfDeparture" : flight.departureDate,
+                            "timeOfDeparture" : flight.departureTime,
+                            "timeOfArrival" : flight.arrivalTime,
+                            "seats": {
+                                "noOfEconomy": flight.planeID.noOfEconomy,
+                                "noOfBusiness": flight.planeID.noOfBusiness,
+                                "noOfFirstClass": flight.planeID.noOfFirstClass,
                             },
-                                'price' : {
-                                    'priceOfEconomy': flight.priceID.priceOfEconomy,
-                                    'priceOfBusiness': flight.priceID.priceOfBusiness,
-                                    'priceOfFirstClass': flight.priceID.priceOfFirstClass
+                                "price" : {
+                                    "priceOfEconomy": flight.priceID.priceOfEconomy,
+                                    "priceOfBusiness": flight.priceID.priceOfBusiness,
+                                    "priceOfFirstClass": flight.priceID.priceOfFirstClass
                             }
                         }
             
-            flightID = '01' + str(flight.pk)
+            flightID = "01" + str(flight.pk)
             listOfFlights[flightID] = flightDict
 
         return JsonResponse(listOfFlights)
@@ -79,53 +80,60 @@ def list_flights(request):
 # }
   
 def start_reservation_process(request):
-    data = json.loads(request.body) #  {‘Flight ID’, 'Seats : {noOfEconomy, noOfBusiness, noOfFirstClass}, 'email'}
-    flightID = data[list(data.keys())[0]] # Int
-    noOfSeats = data[list(data.keys())[1]] # Int
-    email = data[list(data.keys())[2]] # String
 
-    parsedFlightID = int(flightID[2:])
-    economySeats = noOfSeats[list(noOfSeats.keys())[0]] # Int
-    businessSeats = noOfSeats[list(noOfSeats.keys())[1]]# Int
-    firstClassSeats = noOfSeats[list(noOfSeats.keys())[2]] # Int
+    try:
+        cancel_old_reservations()
+        data = json.loads(request.body) #  {‘Flight ID’, "Seats : {noOfEconomy, noOfBusiness, noOfFirstClass}, "email"}
+        flightID = data[list(data.keys())[0]] # Int
+        noOfSeats = data[list(data.keys())[1]] # Int
+        email = data[list(data.keys())[2]] # String
 
-    flight = Flight.objects.get(pk = parsedFlightID)
+        parsedFlightID = int(flightID[2:])
+        economySeats = noOfSeats[list(noOfSeats.keys())[0]] # Int
+        businessSeats = noOfSeats[list(noOfSeats.keys())[1]]# Int
+        firstClassSeats = noOfSeats[list(noOfSeats.keys())[2]] # Int
 
-    # Reduce available seats from the flight
-    totalSeats = economySeats + businessSeats + firstClassSeats
-    flight.totalAvailableSeats -= totalSeats
-    flight.availableSeatsEconomy -= economySeats
-    flight.availableSeatsBusiness -= businessSeats
-    flight.availableSeatsFirstClass -= firstClassSeats
-    flight.save()
+        flight = Flight.objects.get(pk = parsedFlightID)
 
-    # Search for passenger in passenger table, if not present, create new passenger instance
-    newPassenger, created = Passenger.objects.get_or_create(email = email)
-    if not created:
-        newPassenger.email = email
-        newPassenger.save()
+        # Reduce available seats from the flight
+        totalSeats = economySeats + businessSeats + firstClassSeats
+        flight.totalAvailableSeats -= totalSeats
+        flight.availableSeatsEconomy -= economySeats
+        flight.availableSeatsBusiness -= businessSeats
+        flight.availableSeatsFirstClass -= firstClassSeats
+        flight.save()
 
-    # Add reservation to the table
-    reservation = Reservation(
-        passengerID = newPassenger,
-        flightID= flight,
-        noOfEconomy = economySeats,
-        noOfBusiness = businessSeats,
-        noOfFirstClass= firstClassSeats,
-        confirmedStatus = False,
-        timeStarted = timezone.now()
-    )
-    reservation.save()
+        # Search for passenger in passenger table, if not present, create new passenger instance
+        newPassenger, created = Passenger.objects.get_or_create(email = email)
+        if not created:
+            newPassenger.email = email
+            newPassenger.save()
 
-    bookingID = "01" + str(reservation.pk)
-    return JsonResponse({'bookingID': bookingID})
+        # Add reservation to the table
+        reservation = Reservation(
+            passengerID = newPassenger,
+            flightID= flight,
+            noOfEconomy = economySeats,
+            noOfBusiness = businessSeats,
+            noOfFirstClass= firstClassSeats,
+            confirmedStatus = False,
+            timeStarted = timezone.now()
+        )
+        reservation.save()
+
+        bookingID = "01" + str(reservation.pk)
+        return JsonResponse({"bookingID": bookingID})
+    
+    except ObjectDoesNotExist:
+        return JsonResponse({"status": "failed"})
 
 # {"bookingID" : "0115"}
 
 def cancel_reservation(request): 
-
+    
     try:
-        data = json.loads(request.body)  #  {'bookingID'}
+        cancel_old_reservations()
+        data = json.loads(request.body)  #  {"bookingID"}
         reservationID = data[list(data.keys())[0]] # String
         bookingID = reservationID[2:]
         reservation = Reservation.objects.get(pk = bookingID)
@@ -142,15 +150,16 @@ def cancel_reservation(request):
 
         # Delete reservation
         reservation.delete()
-        return JsonResponse({'status': "success"})
+        return JsonResponse({"status": "success"})
 
     except ObjectDoesNotExist:
-        return JsonResponse({'status': "failed"})
+        return JsonResponse({"status": "failed"})
 
 
 def confirm_booking(request):
     try:
-        data = json.loads(request.body)  #  {'bookingID', 'amount'}
+        cancel_old_reservations()
+        data = json.loads(request.body)  #  {"bookingID", "amount"}
         reservationID = data[list(data.keys())[0]] # String
         bookingID = reservationID[2:]
         amount = data[list(data.keys())[1]] # amount
@@ -169,18 +178,19 @@ def confirm_booking(request):
         if(amount == totalPrice2DP):
             reservation.confirmedStatus = True
             reservation.save()
-            return JsonResponse({'status': "success"})
+            return JsonResponse({"status": "success"})
         
         else:
-            return JsonResponse({'status': "failed"})
+            return JsonResponse({"status": "failed"})
     
     except ObjectDoesNotExist:
-        return JsonResponse({'status': "failed"})
+        return JsonResponse({"status": "failed"})
     
 
 def cancel_booking(request):
     try:
-        data = json.loads(request.body)  #  {'bookingID'}
+        cancel_old_reservations()
+        data = json.loads(request.body)  #  {"bookingID"}
         reservationID = data[list(data.keys())[0]] # Int
         bookingID = reservationID[2:]
         reservation = Reservation.objects.get(pk = bookingID)
@@ -197,8 +207,23 @@ def cancel_booking(request):
 
         # Delete reservation
         reservation.delete()
-        return JsonResponse({'status': 'success'})
+        return JsonResponse({"status": "success"})
 
     except ObjectDoesNotExist:
-        return JsonResponse({'status': 'failed'})
+        return JsonResponse({"status": "failed"})
 
+
+def cancel_old_reservations():
+    currentTime = timezone.now()
+    fifteenMinsAgo = currentTime - timedelta(minutes=15)
+    oldReservations = Reservation.objects.filter(timeStarted__lte = fifteenMinsAgo, confirmedStatus = 0)
+    for reservation in oldReservations:
+        # Add number of seats back to flight
+        flight = reservation.flightID
+        totalSeats = reservation.noOfEconomy + reservation.noOfBusiness + reservation.noOfFirstClass
+        flight.totalAvailableSeats += totalSeats
+        flight.availableSeatsEconomy += reservation.noOfEconomy
+        flight.availableSeatsBusiness += reservation.noOfBusiness
+        flight.availableSeatsFirstClass += reservation.noOfFirstClass
+        flight.save()
+        reservation.delete()
